@@ -1,6 +1,8 @@
 
 import "./App.css";
 import { useState, useEffect, useRef } from "react";
+import MyStream from "./MyStream";
+import RemoteUser from "./RemoteUser";
 // import Child from "./Child";
 
 function App() {
@@ -76,7 +78,7 @@ function App() {
 
   const [showSubscribeBtn, setShowSubscribeBtn] = useState(false)
   const [joined, setJoined] = useState(false)
-  // const [userStream, setUserStream] = useState()
+  const [userStream, setUserStream] = useState()
   const [publisherId, setPublisherId] = useState()
   const [remoteStream, setRemoteStream] = useState([])
 
@@ -97,7 +99,6 @@ function App() {
 
   const subscribe = async () => {
 
-    console.log();
     let subscription = await twyngRef.current.subscribe(publisherRef.current)
     const remoteStream = subscription.mediaStream
     // console.log(remoteStream);
@@ -105,20 +106,32 @@ function App() {
 
   }
 
-  const addSubscriberNode = (stream) => {
+  const addSubscriberNode = (data) => {
     // console.log(JSON.stringify(data.publisherId));
-    publisherRef.current = stream
-    const streamId = document.getElementById('stream-id')
-    streamId.innerHTML = `streamId: ${stream.id}`
-    console.log(stream);
+    // publisherRef.current = stream
+    // const streamId = document.getElementById('stream-id')
+    // streamId.innerHTML = `streamId: ${stream.id}`
+    // console.log(stream);
     // setRemoteStream((prev) =>
-    //   [...prev, stream]
+    //   [...prev, {...stream}]
+    console.log(data);
+    try {
+      setRemoteStream((prevStream) => [
+        ...prevStream,
+        {
+          // ...data.data
+          ...data.data
+        }
+      ])
+    } catch (error) {
+      console.error(error);
+    }
     // )
   }
 
 
   console.log(remoteStream);
-
+  // console.log(twyngRef.current);
 
   const join = async (e) => {
     try {
@@ -127,7 +140,7 @@ function App() {
       const joinerInfo = {
         roomId: 'QWERTY15048401',
         userId: randomNumber.toString() + '-' + Date.now(),
-        name: "Hiran",
+        name: "Urgent join",
         attributes: {
           name: "Hiran"
         }
@@ -137,9 +150,8 @@ function App() {
       // console.log("twyng join response" + " " + JSON.stringify(response.result));
       if (response.status) {
         e.target.innerHTML = "Joined"
-        console.log(response.result);
         response.result.streams.forEach((stream) => {
-          addSubscriberNode(stream)
+          addSubscriberNode({ data: stream })
 
         }
         )
@@ -155,26 +167,31 @@ function App() {
 
 
 
+
   const publish = async () => {
-    const localStream = await twyng.createMediastream({ video: "camera" })
-    // setUserStream(localStream.mediaStream);
-    console.log(localStream);
-    const publication = await twyng.publish(localStream)
-    console.log(publication);
-    setPublisherId(publication.conference.userId)
-    publication.addEventListener('error', (err) => {
-      console.log("publication err", err)
-    })
-    myVideo.current.srcObject = localStream.mediaStream;
-    // const publishBtn = document.getElementById("publish-btn");
-    // publishBtn.innerHTML = "Published";
-    setShowSubscribeBtn(true)
 
+    try {
+      const localStream = await twyng.createMediastream({ video: "camera" })
+      setUserStream(localStream.mediaStream);
+      // console.log(localStream);
+      myVideo.current.srcObject = localStream.mediaStream
+      let publish = await twyng.publish(localStream);
+      console.log(publish);
+      console.log(publish.conference.userId);
+      setPublisherId(publish.conference.userId)
+      twyng.addEventListener('new-publisher', async (event) => {
+        console.log("new-publisher entered " + JSON.stringify(event.data))
+        addSubscriberNode(event.data)
+      })
 
-    twyng.addEventListener('new-publisher', async (event) => {
-      // console.log("new-publisher entered ")
-      addSubscriberNode(event.data)
-    })
+      remoteStream.map((stream) => {
+        console.log(stream);
+      })
+
+    } catch (error) {
+      console.error(error);
+    }
+
 
   }
 
@@ -214,6 +231,7 @@ function App() {
       <div className="video-container">
         <h4>Me</h4>
         <video style={{ width: "400px", borderRadius: "10px" }} id="my-video" autoPlay ref={myVideo} src=""></video>
+        {/* <MyStream ref={myVideo}/> */}
         <div className="btns">
           {/* <button onClick={() => setAudio("inactive" ? "active" : "inactive")}>Mute</button>
           <button>Video</button> */}
@@ -237,26 +255,30 @@ function App() {
         <h4>Remote video</h4>
 
 
-        <ol id="remote-video-container">
-        
-                <li>
-                  <div>
-                    <h5 id="stream-id"></h5>
-                    {
-                      showSubscribeBtn && <button id="sub-btn" onClick={subscribe}>subscribe</button>
-                    }
-                  </div>
-                  <video style={{ width: "400px", borderRadius: "10px" }} id="remote-video" autoPlay ref={remoteVideo}></video>
-                </li>
-          
-          {/* <video style={{ width: "400px", borderRadius: "10px" }} id="remote-video" autoPlay ref={remoteVideo} src="" /> */}
+        <div id="remote-video-container">
 
 
-        </ol>
+          <div>
+            <h5 id="stream-id"></h5>
+            {
+              showSubscribeBtn && <button id="sub-btn" onClick={subscribe}>subscribe</button>
+            }
+          </div>
+
+          {
+            remoteStream.length > 0 && remoteStream.map((stream) => {
+              return <RemoteUser stream={stream} twyng={twyngRef} />
+
+
+            })
+          }
+
+          {/* <RemoteUser stream={remoteStream} /> */}
+          {/* <video style={{ width: "400px", borderRadius: "10px" }} id="remote-video" autoPlay ref={remoteVideo}></video> */}
+
+
+        </div>
       </div>
-
-
-
     </div>
   );
 }
