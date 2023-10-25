@@ -1,19 +1,13 @@
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 
-function MyStream({ ref }) {
-    // const myVideoRef = useRef(null)
-    // useEffect(() => {
-    //     if(myVideoRef.current === null){
-    //         myVideoRef.current.srcObject = stream
-    //     }
-    // }, [])
-    // console.log(stream);
+function MyStream({ myVideo }) {
+
+    // console.log(myVideo);
     return (
         <div>
-             <video ref={ref} autoPlay width="100%" height="100%" src=""></video>
-
+            <video ref={myVideo} autoPlay style={{ width: "400px", borderRadius: "10px" }} src=""></video>
         </div>
     )
 }
-   
+
 export default MyStream
