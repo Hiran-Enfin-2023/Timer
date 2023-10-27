@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import MyStream from "./MyStream";
 import RemoteUser from "./RemoteUser";
 // import Child from "./Child";
-
+// import {options} from "./utils/options"
 
 
 const twyng = new window.Twyng({
@@ -18,17 +18,24 @@ const twyng = new window.Twyng({
 
 function App() {
 
+
+
+
   const twyngRef = useRef(null);
   const myVideo = useRef(null);
+  const displayRef = useRef(null);
   const [user, setUser] = useState()
   const [userStream, setUserStream] = useState()
   const [publisherId, setPublisherId] = useState()
   const [remoteStream, setRemoteStream] = useState([])
-
+  const [publishStatus, setPublishStatus] = useState(false)
 
   if (twyngRef.current === null) {
     twyngRef.current = twyng;
   }
+
+  window.onbeforeunload=()=> twyngRef.current.leave()
+
 
 
   const addSubscriberNode = (data) => {
@@ -50,7 +57,6 @@ function App() {
   const join = async (e) => {
     try {
       const randomNumber = Math.floor(Math.random() * (100000 - 10000 + 1)) + 1000;
-
       const joinerInfo = {
         roomId: 'QWERTY15048401',
         userId: randomNumber.toString() + '-' + Date.now(),
@@ -62,8 +68,10 @@ function App() {
 
       setUser(joinerInfo.userId)
       const response = await twyngRef.current.join(joinerInfo)
+      console.log(response, "Join successful");
       if (response.status) {
         e.target.innerHTML = "Joined"
+        setPublishStatus(true)
         response.result.streams.forEach((stream) => {
           return addSubscriberNode({ data: stream })
         }
@@ -89,12 +97,12 @@ function App() {
         addSubscriberNode(event)
       })
 
+      setPublishStatus(false)
+
     } catch (error) {
       console.error(error);
     }
   }
-
-
 
 
   return (
@@ -110,7 +118,9 @@ function App() {
           <button onClick={join} id="join-btn">Join</button>
         </div>
         <div>
-          <button id="publish-btn" onClick={publish}>Publish</button>
+          {
+            publishStatus && <button id="publish-btn" onClick={publish}>Publish</button>
+          }
         </div>
       </div>
 
@@ -120,10 +130,10 @@ function App() {
         <h4>Remote video</h4>
 
         <div id="remote-video-container">
-          <div style={{ height: "100%" }} id="layout">
+          <div style={{ height: "100%", display: "flex", flexWrap: "wrap", justifyContent: "space-evenly" }} id="layout">
             {
               remoteStream.length > 0 && remoteStream.map((stream, i) => {
-                  return <RemoteUser key={i} streams={stream} twyng={twyngRef} />
+                return <RemoteUser key={i} streams={stream} twyng={twyngRef} />
               })
             }
           </div>
