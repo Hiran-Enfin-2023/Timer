@@ -18,23 +18,22 @@ const twyng = new window.Twyng({
 
 function App() {
 
-
-
-
   const twyngRef = useRef(null);
   const myVideo = useRef(null);
   const displayRef = useRef(null);
   const [user, setUser] = useState()
-  const [userStream, setUserStream] = useState()
+  const [userStream, setUserStream] = useState();
+  const [publishedStream, setPublishedStream] = useState();
   const [publisherId, setPublisherId] = useState()
   const [remoteStream, setRemoteStream] = useState([])
   const [publishStatus, setPublishStatus] = useState(false)
+  const [muteAudio, setMuteAudio] = useState(false);
+  const [muteVideo, setMuteVideo] = useState(false)
 
   if (twyngRef.current === null) {
     twyngRef.current = twyng;
   }
 
-  window.onbeforeunload=()=> twyngRef.current.leave()
 
 
 
@@ -87,16 +86,15 @@ function App() {
 
   const publish = async () => {
     try {
-      const localStream = await twyngRef.current.createMediastream({ video: "camera" })
+      const localStream = await twyngRef.current.createMediastream({ video: "camera", audio: "mic" })
       setUserStream(localStream.mediaStream);
       myVideo.current.srcObject = localStream.mediaStream
       let publish = await twyngRef.current.publish(localStream);
-
+      setPublishedStream(publish)
       setPublisherId(publish.conference.userId);
       twyng.addEventListener('new-publisher', async (event) => {
         addSubscriberNode(event)
       })
-
       setPublishStatus(false)
 
     } catch (error) {
@@ -104,23 +102,64 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    if (publishedStream) {
+      if (muteVideo === true) {
+        publishedStream.mute("video", userStream)
+      }
+      if (muteVideo === false) {
+        publishedStream.unmute("video")
+      }
+    }
+
+  }, [muteVideo])
+
+
+  const changeDevice = async () => {
+    const localStream = await twyngRef.current.createMediastream({
+      video: 'camera',
+      audio: 'mic'
+    })
+
+    publishedStream.changeDevice(localStream)
+  }
+
+  useEffect(() => {
+    if (publishedStream) {
+      if (muteAudio === true) {
+        publishedStream.mute("audio")
+      } if (muteAudio === false) {
+        publishedStream.unmute("audio");
+        changeDevice()
+      }
+    }
+  }, [muteAudio])
+
+
+
+  window.onbeforeunload = () => twyngRef.current.leave()
+
 
   return (
-    <div style={{ height: "100", backgroundColor: "whitesmoke" }} className="App">
+    <div style={{ height: "100vh", backgroundColor: "whitesmoke" }} className="App">
 
-      <div className="video-container">
-        <h4>My Video</h4>
-        <MyStream myVideo={myVideo} />
-      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }} className="myVideo">
 
-      <div style={{ display: "flex", gap: "10px" }}>
-        <div>
-          <button onClick={join} id="join-btn">Join</button>
+
+        <div className="video-container">
+          <h4>My Video</h4>
+          <MyStream myVideo={myVideo} setMuteAudio={setMuteAudio} setMuteVideo={setMuteVideo} />
         </div>
-        <div>
-          {
-            publishStatus && <button id="publish-btn" onClick={publish}>Publish</button>
-          }
+
+        <div style={{ display: "flex", gap: "10px", margin: "20px", }}>
+          <div>
+            <button style={{ padding: "10px 25px", backgroundColor: "Black", border: "none", color: "white" }} onClick={join} id="join-btn">Join</button>
+          </div>
+          <div >
+            {
+              publishStatus && <button id="publish-btn" style={{ padding: "10px 25px", backgroundColor: "white", color: "black", border: ".1px solid gray" }} onClick={publish}>Publish</button>
+            }
+          </div>
         </div>
       </div>
 
