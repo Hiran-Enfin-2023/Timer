@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import MyStream from "./MyStream";
 import RemoteUser from "./RemoteUser";
 // import Child from "./Child";
-// import {options} from "./utils/options"
+import { options } from "./utils/options"
 
 
 const twyng = new window.Twyng({
@@ -14,6 +14,7 @@ const twyng = new window.Twyng({
     { urls: ['stun:stun.l.google.com:19302'] }
   ]
 });
+
 
 
 function App() {
@@ -29,14 +30,27 @@ function App() {
   const [publishStatus, setPublishStatus] = useState(false)
   const [muteAudio, setMuteAudio] = useState(false);
   const [muteVideo, setMuteVideo] = useState(false)
+  const [screenShare, setScreenShare] = useState(false)
+  const [screenSharePublish, setScreenSharePublish] = useState();
+  const [callEnd, setCallEnd] = useState(false)
+  const layoutRef = useRef(null)
 
   if (twyngRef.current === null) {
     twyngRef.current = twyng;
   }
 
 
+  const updateLayout = () => {
+    const layout = window.initLayoutContainer(document.getElementById("layout"), options);
+    if (layoutRef.current === null) {
+      layoutRef.current = layout;
+      layoutRef.current.layout()
+    } else {
+      layoutRef.current.layout()
+    }
+  }
 
-
+  // subscriber node
   const addSubscriberNode = (data) => {
     // console.log(data);
     try {
@@ -51,8 +65,10 @@ function App() {
     }
   }
 
-  console.log(remoteStream);
+  
 
+
+  //twyng join func 
   const join = async (e) => {
     try {
       const randomNumber = Math.floor(Math.random() * (100000 - 10000 + 1)) + 1000;
@@ -102,6 +118,8 @@ function App() {
     }
   }
 
+
+  // useEffect for video changes
   useEffect(() => {
     if (publishedStream) {
       if (muteVideo === true) {
@@ -115,40 +133,88 @@ function App() {
   }, [muteVideo])
 
 
-  const changeDevice = async () => {
-    const localStream = await twyngRef.current.createMediastream({
-      video: 'camera',
-      audio: 'mic'
-    })
+  // const changeDevice = async () => {
+  //   const localStream = await twyngRef.current.createMediastream({
+  //     video: 'camera',
+  //     audio: 'mic'
+  //   })
 
-    publishedStream.changeDevice(localStream)
-  }
+  //   publishedStream.changeDevice(localStream)
+  // }
 
+
+  // useEffect for audio changes
   useEffect(() => {
     if (publishedStream) {
       if (muteAudio === true) {
         publishedStream.mute("audio")
+
       } if (muteAudio === false) {
         publishedStream.unmute("audio");
-        changeDevice()
+        // changeDevice()
       }
     }
   }, [muteAudio])
 
 
 
+  const screenShareHandler = async () => {
+    if (screenShare) {
+      const screenStream = await twyngRef.current.createMediastream({ video: "screen" });
+      // console.log(screenStream);
+      const screenPublish = await twyngRef.current.publish(screenStream);
+      setScreenSharePublish(screenPublish)
+    }
+  }
+  if (screenShare === false) {
+    if (screenSharePublish) {
+      screenSharePublish.stop()
+    }
+  }
+  // console.log(screenShare);
+
+  useEffect(() => {
+    screenShareHandler()
+  }, [screenShare])
+
+
+
+  //opentok layout
+  useEffect(() => {
+    updateLayout()
+  }, [remoteStream]);
+
+console.log(remoteStream);
+  useEffect(() => {
+
+    const handleStreamEnd = (data) => {
+      // setRemoteStream((event) => {
+      //   event.filter(event.id !== data.data.id)
+      // })
+      console.log(data.data.id);
+    }
+    twyngRef.current.addEventListener("stream-ended", handleStreamEnd);
+  }, [])
+
   window.onbeforeunload = () => twyngRef.current.leave()
 
 
   return (
-    <div style={{ height: "100vh", backgroundColor: "whitesmoke" }} className="App">
+    <div style={{ minHeight: "100vh", backgroundColor: "whitesmoke" }} className="App">
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }} className="myVideo">
 
 
         <div className="video-container">
           <h4>My Video</h4>
-          <MyStream myVideo={myVideo} setMuteAudio={setMuteAudio} setMuteVideo={setMuteVideo} />
+          <MyStream
+            myVideo={myVideo}
+            setMuteAudio={setMuteAudio}
+            setMuteVideo={setMuteVideo}
+            muteAudio={muteAudio}
+            muteVideo={muteVideo}
+            setScreenShare={setScreenShare}
+            setCallEnd={setCallEnd} />
         </div>
 
         <div style={{ display: "flex", gap: "10px", margin: "20px", }}>
@@ -169,10 +235,10 @@ function App() {
         <h4>Remote video</h4>
 
         <div id="remote-video-container">
-          <div style={{ height: "100%", display: "flex", flexWrap: "wrap", justifyContent: "space-evenly" }} id="layout">
+          <div style={{ height: "100%", display: "flex", flexWrap: "wrap", justifyContent: "space-evenly", position: "relative" }} id="layout">
             {
               remoteStream.length > 0 && remoteStream.map((stream, i) => {
-                return <RemoteUser key={i} streams={stream} twyng={twyngRef} />
+                return <RemoteUser muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} />
               })
             }
           </div>
