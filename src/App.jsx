@@ -5,6 +5,7 @@ import MyStream from "./MyStream";
 import RemoteUser from "./RemoteUser";
 // import Child from "./Child";
 import { options } from "./utils/options"
+import ChatCtrl from "./ChatCtrl";
 
 
 const twyng = new window.Twyng({
@@ -34,6 +35,7 @@ function App() {
   const [screenSharePublish, setScreenSharePublish] = useState();
   const [callEnd, setCallEnd] = useState(false)
   const layoutRef = useRef(null)
+  const [roomId, setRoomId] = useState()
 
   if (twyngRef.current === null) {
     twyngRef.current = twyng;
@@ -65,7 +67,7 @@ function App() {
     }
   }
 
-  
+
 
 
   //twyng join func 
@@ -82,6 +84,7 @@ function App() {
       }
 
       setUser(joinerInfo.userId)
+      setRoomId(joinerInfo.roomId)
       const response = await twyngRef.current.join(joinerInfo)
       console.log(response, "Join successful");
       if (response.status) {
@@ -93,6 +96,7 @@ function App() {
         )
 
       }
+
     } catch (error) {
       console.error(error);
     }
@@ -104,7 +108,7 @@ function App() {
     try {
       const localStream = await twyngRef.current.createMediastream({ video: "camera", audio: "mic" })
       setUserStream(localStream.mediaStream);
-      myVideo.current.srcObject = localStream.mediaStream
+      // myVideo.current.srcObject = localStream.mediaStream
       let publish = await twyngRef.current.publish(localStream);
       setPublishedStream(publish)
       setPublisherId(publish.conference.userId);
@@ -177,14 +181,15 @@ function App() {
     screenShareHandler()
   }, [screenShare])
 
-
+  console.log(publishedStream);
+  console.log(screenSharePublish);
 
   //opentok layout
   useEffect(() => {
     updateLayout()
   }, [remoteStream]);
 
-console.log(remoteStream);
+  console.log(remoteStream);
   useEffect(() => {
 
     const handleStreamEnd = (data) => {
@@ -200,24 +205,24 @@ console.log(remoteStream);
 
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "whitesmoke" }} className="App">
+    <div style={{ minHeight: "100vh", backgroundColor: "whitesmoke", position: "relative" }} className="App">
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }} className="myVideo">
 
 
-        <div className="video-container">
-          <h4>My Video</h4>
-          <MyStream
+        {/* <div className="video-container">
+          <h4>My Video</h4> */}
+        {/* <MyStream
             myVideo={myVideo}
             setMuteAudio={setMuteAudio}
             setMuteVideo={setMuteVideo}
             muteAudio={muteAudio}
             muteVideo={muteVideo}
             setScreenShare={setScreenShare}
-            setCallEnd={setCallEnd} />
-        </div>
+            setCallEnd={setCallEnd} /> */}
+        {/* </div> */}
 
-        <div style={{ display: "flex", gap: "10px", margin: "20px", }}>
+        <div style={{ display: "flex", gap: "10px", margin: "20px" }}>
           <div>
             <button style={{ padding: "10px 25px", backgroundColor: "Black", border: "none", color: "white" }} onClick={join} id="join-btn">Join</button>
           </div>
@@ -227,23 +232,40 @@ console.log(remoteStream);
             }
           </div>
         </div>
+
       </div>
+
+
 
       <hr />
 
-      <div className="remote-user-videos">
-        <h4>Remote video</h4>
+      <div style={{ height: "80%", width: "100%", backgroundColor: "red", }} className="remote-user-videos">
 
-        <div id="remote-video-container">
-          <div style={{ height: "100%", display: "flex", flexWrap: "wrap", justifyContent: "space-evenly", position: "relative" }} id="layout">
-            {
-              remoteStream.length > 0 && remoteStream.map((stream, i) => {
-                return <RemoteUser muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} />
-              })
-            }
-          </div>
+        <div style={{ position: "relative" , height:"75%", backgroundColor:"red"}} id="layout">
+          {
+            remoteStream.length > 0 && remoteStream.map((stream, i) => {
+              return <RemoteUser muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} />
+            })
+          }
         </div>
+
       </div>
+
+      {/* ------------------Controllers--------------------- */}
+
+      {
+        remoteStream.length > 0 && <ChatCtrl
+          roomId={roomId}
+          myVideo={myVideo}
+          setMuteAudio={setMuteAudio}
+          setMuteVideo={setMuteVideo}
+          muteAudio={muteAudio}
+          muteVideo={muteVideo}
+          setScreenShare={setScreenShare}
+          setCallEnd={setCallEnd}
+        />}
+
+
     </div>
   );
 }
