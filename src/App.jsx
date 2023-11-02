@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import MyStream from "./MyStream";
 import RemoteUser from "./RemoteUser";
 // import Child from "./Child";
-import { options } from "./utils/options"
+// import { options } from "./utils/options"
 import ChatCtrl from "./ChatCtrl";
 
 
@@ -16,7 +16,33 @@ const twyng = new window.Twyng({
   ]
 });
 
-
+const options = {
+  maxRatio: 3 / 2,             // The narrowest ratio that will be used (default 2x3)
+  minRatio: 9 / 16,            // The widest ratio that will be used (default 16x9)
+  fixedRatio: false,         // If this is true then the aspect ratio of the video is maintained and minRatio and maxRatio are ignored (default false)
+  scaleLastRow: true,        // If there are less elements on the last row then we can scale them up to take up more space
+  alignItems: 'center',      // Can be 'start', 'center' or 'end'. Determines where to place items when on a row or column that is not full
+  bigClass: "OT_big",        // The class to add to elements that should be sized bigger
+  bigPercentage: 0.8,        // The maximum percentage of space the big ones should take up
+  minBigPercentage: 0,       // If this is set then it will scale down the big space if there is left over whitespace down to this minimum size
+  bigFixedRatio: false,      // fixedRatio for the big ones
+  bigScaleLastRow: true,     // scale last row for the big elements
+  bigAlignItems: 'center',   // How to align the big items
+  smallAlignItems: 'center', // How to align the small row or column of items if there is a big one
+  maxWidth: Infinity,        // The maximum width of the elements
+  maxHeight: Infinity,       // The maximum height of the elements
+  smallMaxWidth: Infinity,   // The maximum width of the small elements
+  smallMaxHeight: Infinity,  // The maximum height of the small elements
+  bigMaxWidth: Infinity,     // The maximum width of the big elements
+  bigMaxHeight: Infinity,    // The maximum height of the big elements
+  bigMaxRatio: 3 / 2,          // The narrowest ratio to use for the big elements (default 2x3)
+  bigMinRatio: 9 / 16,         // The widest ratio to use for the big elements (default 16x9)
+  bigFirst: true,            // Whether to place the big one in the top left (true) or bottom right (false).                              // You can also pass 'column' or 'row' to change whether big is first when you are in a row (bottom) or a column (right) layout
+  animate: true,             // Whether you want to animate the transitions using jQuery (not recommended, use CSS transitions instead)
+  window: window,            // Lets you pass in your own window object which should be the same window that the element is in
+  ignoreClass: 'OT_ignore',  // Elements with this class will be ignored and not positioned. This lets you do things like picture-in-picture
+  onLayout: null,            // A function that gets called every time an element is moved or resized, (element, { left, top, width, height }) => {} 
+};
 
 function App() {
 
@@ -54,7 +80,6 @@ function App() {
 
   // subscriber node
   const addSubscriberNode = (data) => {
-    // console.log(data);
     try {
       setRemoteStream((prevStream) => [
         ...prevStream,
@@ -94,9 +119,7 @@ function App() {
           return addSubscriberNode({ data: stream })
         }
         )
-
       }
-
     } catch (error) {
       console.error(error);
     }
@@ -136,26 +159,13 @@ function App() {
 
   }, [muteVideo])
 
-
-  // const changeDevice = async () => {
-  //   const localStream = await twyngRef.current.createMediastream({
-  //     video: 'camera',
-  //     audio: 'mic'
-  //   })
-
-  //   publishedStream.changeDevice(localStream)
-  // }
-
-
   // useEffect for audio changes
   useEffect(() => {
     if (publishedStream) {
       if (muteAudio === true) {
         publishedStream.mute("audio")
-
       } if (muteAudio === false) {
         publishedStream.unmute("audio");
-        // changeDevice()
       }
     }
   }, [muteAudio])
@@ -175,21 +185,20 @@ function App() {
       screenSharePublish.stop()
     }
   }
-  // console.log(screenShare);
+
 
   useEffect(() => {
     screenShareHandler()
   }, [screenShare])
 
-  console.log(publishedStream);
-  console.log(screenSharePublish);
+  // console.log(publishedStream);
+  // console.log(screenSharePublish);
 
   //opentok layout
   useEffect(() => {
     updateLayout()
   }, [remoteStream]);
 
-  console.log(remoteStream);
   useEffect(() => {
 
     const handleStreamEnd = (data) => {
@@ -205,51 +214,28 @@ function App() {
 
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "whitesmoke", position: "relative" }} className="App">
-
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }} className="myVideo">
-
-
-        {/* <div className="video-container">
-          <h4>My Video</h4> */}
-        {/* <MyStream
-            myVideo={myVideo}
-            setMuteAudio={setMuteAudio}
-            setMuteVideo={setMuteVideo}
-            muteAudio={muteAudio}
-            muteVideo={muteVideo}
-            setScreenShare={setScreenShare}
-            setCallEnd={setCallEnd} /> */}
-        {/* </div> */}
-
-        <div style={{ display: "flex", gap: "10px", margin: "20px" }}>
-          <div>
-            <button style={{ padding: "10px 25px", backgroundColor: "Black", border: "none", color: "white" }} onClick={join} id="join-btn">Join</button>
-          </div>
-          <div >
-            {
-              publishStatus && <button id="publish-btn" style={{ padding: "10px 25px", backgroundColor: "white", color: "black", border: ".1px solid gray" }} onClick={publish}>Publish</button>
-            }
-          </div>
+    <div style={{ minHeight: "100vh", backgroundColor: "white", position: "relative" }} className="App">
+      <div style={{ display: "flex", gap: "10px", padding: "25px", backgroundColor: "whitesmoke", }} className="myVideo">
+        <div>
+          <button style={{ padding: "10px 25px", backgroundColor: "Black", border: "none", color: "white" }} onClick={join} id="join-btn">Join</button>
         </div>
-
+        <div >
+          {
+            publishStatus && <button id="publish-btn" style={{ padding: "10px 25px", backgroundColor: "white", color: "black", border: ".1px solid gray" }} onClick={publish}>Publish</button>
+          }
+        </div>
       </div>
-
-
-
       <hr />
-
-      <div style={{ height: "80%", width: "100%", backgroundColor: "red", }} className="remote-user-videos">
-
-        <div style={{ position: "relative" , height:"75%", backgroundColor:"red"}} id="layout">
+      <div style={{ height: "80vh" }} className="remote-user-videos">
+        <div style={{ position: "relative", height:"90%", padding:"10px", backgroundColor: "black" }} id="layout">
           {
             remoteStream.length > 0 && remoteStream.map((stream, i) => {
               return <RemoteUser muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} />
             })
           }
         </div>
-
       </div>
+
 
       {/* ------------------Controllers--------------------- */}
 
@@ -263,9 +249,8 @@ function App() {
           muteVideo={muteVideo}
           setScreenShare={setScreenShare}
           setCallEnd={setCallEnd}
-        />}
-
-
+        />
+      }
     </div>
   );
 }
