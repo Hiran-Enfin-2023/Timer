@@ -78,6 +78,7 @@ function App() {
     }
   }
 
+
   // subscriber node
   const addSubscriberNode = (data) => {
     try {
@@ -193,10 +194,12 @@ function App() {
 
   // console.log(publishedStream);
   // console.log(screenSharePublish);
+  console.log(remoteStream);
 
   //opentok layout
   useEffect(() => {
-    updateLayout()
+    updateLayout();
+    
   }, [remoteStream]);
 
   useEffect(() => {
@@ -207,7 +210,7 @@ function App() {
       // })
       console.log(data.data.id);
     }
-    twyngRef.current.addEventListener("stream-ended", handleStreamEnd);
+    // twyngRef.current.addEventListener("stream-ended", handleStreamEnd);
   }, [])
 
   window.onbeforeunload = () => twyngRef.current.leave()
@@ -227,10 +230,10 @@ function App() {
       </div>
       <hr />
       <div style={{ height: "80vh" }} className="remote-user-videos">
-        <div style={{ position: "relative", height:"90%", padding:"10px", backgroundColor: "black" }} id="layout">
+        <div style={{ position: "relative", height: "90%", padding: "10px", backgroundColor: "black" }} id="layout">
           {
             remoteStream.length > 0 && remoteStream.map((stream, i) => {
-              return <RemoteUser muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} />
+              return <RemoteUser layoutRef={layoutRef} muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} />
             })
           }
         </div>
