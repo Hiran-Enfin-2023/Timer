@@ -32,7 +32,7 @@ function RemoteUser({layoutRef, muteAudio, muteVideo, streams, twyng }) {
         subscriberFunc();
     }, [streams])
 
-
+   
 
     return (
         <div className={isPinned ? "OT_big" : null} class style={{ backgroundColor: "black", transition: "all", transitionDuration: ".5s", border: "5px solid violet", borderRadius: "10px", marginTop: "5px", marginBottom: "10px" }}>

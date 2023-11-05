@@ -44,7 +44,7 @@ const options = {
   onLayout: null,            // A function that gets called every time an element is moved or resized, (element, { left, top, width, height }) => {} 
 };
 
-function App() {
+function Main() {
 
   const twyngRef = useRef(null);
   const myVideo = useRef(null);
@@ -196,7 +196,7 @@ function App() {
   // console.log(publishedStream);
   // console.log(screenSharePublish);
   console.log(remoteStream);
-  // console.log(publisherId);
+  console.log(publisherId);
 
   //opentok layout
   useEffect(() => {
@@ -204,16 +204,18 @@ function App() {
     
   }, [remoteStream]);
 
-  // useEffect(() => {
+  remoteStream.forEach((stream)=>{
+    console.log(stream.id);
+  });
+
+ 
 
     const handleStreamEnd = (data) => {
-      setRemoteStream((event) => {
-        event.filter(event.id !== data.data.id)
-      })
-      console.log(data.data.id);
+      const filterRemote = remoteStream.filter((stream)=> stream.id !== data.data.id)
+      setRemoteStream(filterRemote) 
     }
-    // twyngRef.current.addEventListener("stream-ended", handleStreamEnd);
-  // }, [])
+    twyngRef.current.addEventListener("stream-ended", handleStreamEnd);
+ 
 
   window.onbeforeunload = () => twyngRef.current.leave()
 
@@ -247,17 +249,18 @@ function App() {
       {
         remoteStream.length > 0 && <ChatCtrl
           roomId={roomId}
-          myVideo={myVideo}
+          publisherId={publisherId}
           setMuteAudio={setMuteAudio}
           setMuteVideo={setMuteVideo}
           muteAudio={muteAudio}
           muteVideo={muteVideo}
           setScreenShare={setScreenShare}
-          setCallEnd={setCallEnd}
+          remoteStream={remoteStream}
+          setRemoteStream={setRemoteStream}
         />
       }
     </div>
   );
 }
 
-export default App;
+export default Main;
