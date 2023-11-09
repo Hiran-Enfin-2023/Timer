@@ -201,7 +201,6 @@ function App() {
   //opentok layout
   useEffect(() => {
     updateLayout();
-    
   }, [remoteStream]);
 
   // useEffect(() => {

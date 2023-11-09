@@ -4,6 +4,7 @@ import { BsFillMicFill, BsFillPeopleFill, BsFillMicMuteFill, BsFillCameraVideoFi
 import { LuScreenShare } from "react-icons/lu"
 import { MdMessage } from "react-icons/md"
 function ChatCtrl({ roomId, publisherId, setMuteAudio, setMuteVideo, muteAudio, muteVideo, setScreenShare, remoteStream, setRemoteStream }) {
+   console.log(remoteStream);
     const muteVideoFn = () => {
         setMuteVideo((prev) => !prev)
     }
@@ -17,7 +18,12 @@ function ChatCtrl({ roomId, publisherId, setMuteAudio, setMuteVideo, muteAudio, 
 
     const callHangupHandler = (data) => {
         const filteredData =  remoteStream.filter((e)=>e.publisherId !== data);
+        // const filteredData = remoteStream.forEach((ele)=>{
+        //     console.log(ele.publisherId);
+        // })
         setRemoteStream(filteredData)
+        console.log(filteredData);
+        
        
       }
     return (

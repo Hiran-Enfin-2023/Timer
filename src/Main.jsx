@@ -47,8 +47,7 @@ const options = {
 function Main() {
 
   const twyngRef = useRef(null);
-  const myVideo = useRef(null);
-  const displayRef = useRef(null);
+  const [currentPinned, setCurrentPinned] = useState()
   const [user, setUser] = useState()
   const [userStream, setUserStream] = useState();
   const [publishedStream, setPublishedStream] = useState();
@@ -80,8 +79,14 @@ function Main() {
 
 
   // subscriber node
-  const addSubscriberNode = (data) => {
+  const addSubscriberNode = async (data) => {
     try {
+      if (data.data) {
+        let sub = await twyngRef.current.subscribe(data.data)
+        if (sub.streamInfo.mediaSource.videoSourceInfo.name === "screen") {
+          setCurrentPinned(sub.streamId)
+        };
+      }
       setRemoteStream((prevStream) => [
         ...prevStream,
         {
@@ -116,37 +121,59 @@ function Main() {
       if (response.status) {
         e.target.innerHTML = "Joined"
         setPublishStatus(true)
-        response.result.streams.forEach((stream) => {
+        response.result.streams.forEach(async (stream) => {
           return addSubscriberNode({ data: stream })
         }
         )
       }
-    } catch (error) {
-      console.error(error);
-    }
-  }
 
-  // twyng publisher-----------------
 
-  const publish = async () => {
-    try {
       const localStream = await twyngRef.current.createMediastream({ video: "camera", audio: "mic" })
       setUserStream(localStream.mediaStream);
-      // myVideo.current.srcObject = localStream.mediaStream
       let publish = await twyngRef.current.publish(localStream);
       setPublishedStream(publish);
+      console.log(publish);
       setPublisherId(publish.conference.userId);
-      twyng.addEventListener('new-publisher', async (event) => {
+      twyngRef.current.addEventListener('new-publisher', async (event) => {
         addSubscriberNode(event)
       })
       setPublishStatus(false)
-
     } catch (error) {
       console.error(error);
     }
   }
 
+  screenSharePublish?.localStream?.mediaStream.addEventListener("ended", (event) => {
+    console.log(event, "event res");
+  })
+  onended = (event) => {
+    console.log(event, "onended event");
+  };
+  
+  // screenSharePublish?.localStream?.mediaStream.onended = () => {
+  //   console.log("sharing ended");
+  // };
+  // twyng publisher-----------------
 
+  // const publish = async () => {
+  //   try {
+  //     const localStream = await twyngRef.current.createMediastream({ video: "camera", audio: "mic" })
+  //     setUserStream(localStream.mediaStream);
+  //     // myVideo.current.srcObject = localStream.mediaStream
+  //     let publish = await twyngRef.current.publish(localStream);
+  //     setPublishedStream(publish);
+  //     setPublisherId(publish.conference.userId);
+  //     twyng.addEventListener('new-publisher', async (event) => {
+  //       addSubscriberNode(event)
+  //     })
+  //     setPublishStatus(false)
+
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
+
+  console.log(remoteStream);
   // useEffect for video changes
   useEffect(() => {
     if (publishedStream) {
@@ -178,9 +205,16 @@ function Main() {
       const screenStream = await twyngRef.current.createMediastream({ video: "screen" });
       // console.log(screenStream);
       const screenPublish = await twyngRef.current.publish(screenStream);
+      // console.log(screenPublish.conference.userId);
+      setCurrentPinned(screenPublish?.conference?.userId)
       setScreenSharePublish(screenPublish)
+    } else {
+
     }
   }
+
+  console.log(screenSharePublish?.localStream?.mediaStream, "screenSharePublish");
+
 
   if (screenShare === false) {
     if (screenSharePublish) {
@@ -188,34 +222,32 @@ function Main() {
     }
   }
 
-
   useEffect(() => {
+
     screenShareHandler()
+
   }, [screenShare])
 
-  // console.log(publishedStream);
-  // console.log(screenSharePublish);
-  console.log(remoteStream);
-  console.log(publisherId);
+
 
   //opentok layout
   useEffect(() => {
     updateLayout();
-    
   }, [remoteStream]);
 
-  remoteStream.forEach((stream)=>{
-    console.log(stream.id);
-  });
+  // remoteStream.forEach((stream) => {
+  //   console.log(stream.id);
+  // });
 
- 
 
-    const handleStreamEnd = (data) => {
-      const filterRemote = remoteStream.filter((stream)=> stream.id !== data.data.id)
-      setRemoteStream(filterRemote) 
-    }
-    twyngRef.current.addEventListener("stream-ended", handleStreamEnd);
- 
+
+  const handleStreamEnd = (data) => {
+    const filterRemote = remoteStream.filter((stream) => stream.id !== data.data.id)
+
+    setRemoteStream(filterRemote)
+  }
+  twyngRef.current.addEventListener("stream-ended", handleStreamEnd);
+  console.log(remoteStream);
 
   window.onbeforeunload = () => twyngRef.current.leave()
 
@@ -226,18 +258,18 @@ function Main() {
         <div>
           <button style={{ padding: "10px 25px", backgroundColor: "Black", border: "none", color: "white" }} onClick={join} id="join-btn">Join</button>
         </div>
-        <div >
+        {/* <div >
           {
             publishStatus && <button id="publish-btn" style={{ padding: "10px 25px", backgroundColor: "white", color: "black", border: ".1px solid gray" }} onClick={publish}>Publish</button>
           }
-        </div>
+        </div> */}
       </div>
       <hr />
       <div style={{ height: "80vh" }} className="remote-user-videos">
         <div style={{ position: "relative", height: "90%", padding: "10px", backgroundColor: "black" }} id="layout">
           {
             remoteStream.length > 0 && remoteStream.map((stream, i) => {
-              return <RemoteUser layoutRef={layoutRef} muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} />
+              return <RemoteUser layoutRef={layoutRef} muteAudio={muteAudio} muteVideo={muteVideo} key={i} streams={stream} twyng={twyngRef} setCurrentPinned={setCurrentPinned} currentPinned={currentPinned} />
             })
           }
         </div>
